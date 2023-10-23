@@ -23,5 +23,7 @@ jobs:
         # If you have a requirements.txt file, uncomment the next line
         # pip install -r requirements.txt
 
-    - name: Run tests with pytest
-      run: pytest tests/
+    - name: Change to src directory and run tests with pytest
+      run: |
+        cd src
+        pytest ../tests/

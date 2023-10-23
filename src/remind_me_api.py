@@ -22,15 +22,56 @@ app = FastAPI()
 router = APIRouter()
 
 
+class RateLimiter:
+    def __init__(self, requests: int, window: int):
+        """
+        :param requests: Number of allowed requests
+        :param window: Time window in seconds
+        """
+        self.requests = requests
+        self.window = window
+        self.timestamps = {}
+
+    def request(self, client: str) -> bool:
+        """
+        Check and register the request for rate limiting.
+
+        :param client: Client identifier (e.g. IP address)
+        :return: True if request is allowed, False otherwise
+        """
+        now = time.time()
+        if client not in self.timestamps:
+            self.timestamps[client] = []
+
+        self.timestamps[client] = [
+            ts for ts in self.timestamps[client] if ts > now - self.window
+        ]
+
+        if len(self.timestamps[client]) < self.requests:
+            self.timestamps[client].append(now)
+            return True
+
+        return False
+
+
+rate_limiter = RateLimiter(requests=50, window=60)  # 50 requests per minute
+
+
+def rate_limit(request: Request):
+    client_ip = request.client.host
+    if not rate_limiter.request(client_ip):
+        raise HTTPException(status_code=429, detail="Too many requests")
+    return True
+
+
 def get_handler():
     return CombinedHandler()
 
 
 # ----- Routs ----- #
 
-@router.post("/login/")
+@router.post("/login/", dependencies=[Depends(rate_limit)])
 def add_user(
-        request: Request,
         username: str,
         password: str,
         handler: CombinedHandler = Depends(get_handler)):
@@ -45,7 +86,7 @@ def add_user(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/register/")
+@router.post("/register/", dependencies=[Depends(rate_limit)])
 def register(
         username: str,
         mail: str,
@@ -54,18 +95,18 @@ def register(
     return {"user_id": handler.add_user(username, mail, password)}
 
 
-@router.get("/get_user/{user_id}/")
+@router.get("/get_user/{user_id}/", dependencies=[Depends(rate_limit)])
 def get_user(user_id: str, handler: CombinedHandler = Depends(get_handler)):
     return handler.get_user(user_id)
 
 
-@router.delete("/remove_user/{user_id}/")
+@router.delete("/remove_user/{user_id}/", dependencies=[Depends(rate_limit)])
 def remove_user(user_id: str, handler: CombinedHandler = Depends(get_handler)):
     handler.remove_user(user_id)
     return {"message": "User removed successfully"}
 
 
-@router.post("/schedule_event/")
+@router.post("/schedule_event/", dependencies=[Depends(rate_limit)])
 def schedule_event(
         user_id: str,
         name: str,
@@ -83,7 +124,7 @@ def schedule_event(
                                           end)}
 
 
-@router.delete("/remove_event/{event_name}/")
+@router.delete("/remove_event/{event_name}/", dependencies=[Depends(rate_limit)])
 def remove_event(user_id: str, event_name: str, handler: CombinedHandler = Depends(get_handler)):
     event = handler.get_events_by_attribute(event_name=event_name)[0]
     if event.created_user_id != user_id:
@@ -93,7 +134,7 @@ def remove_event(user_id: str, event_name: str, handler: CombinedHandler = Depen
     return {"message": "Event removed successfully"}
 
 
-@router.put("/modify_event/{event_name}/")
+@router.put("/modify_event/{event_name}/", dependencies=[Depends(rate_limit)])
 def modify_event(
         user_id: str,
         event_name: str,
@@ -121,7 +162,7 @@ def modify_event(
     return {"message": "Event modified successfully"}
 
 
-@router.get("/events")
+@router.get("/events", dependencies=[Depends(rate_limit)])
 def get_events_by_attribute(
         sort_by_attribute: str = None,  # Event
         reverse: bool = False,
@@ -138,7 +179,7 @@ def get_events_by_attribute(
     return events
 
 
-@router.get("/get_event/{event_name}/")
+@router.get("/get_event/{event_name}/", dependencies=[Depends(rate_limit)])
 def get_event(event_name: str, handler: CombinedHandler = Depends(get_handler)):
     event = handler.get_events_by_attribute(event_name=event_name)
     if len(event) != 1:
@@ -152,7 +193,7 @@ def get_event(event_name: str, handler: CombinedHandler = Depends(get_handler)):
     return event[0]
 
 
-@router.post("/add_subscriber/")
+@router.post("/add_subscriber/", dependencies=[Depends(rate_limit)])
 def add_subscriber_to_event(
         event_id: str,
         user_id: str,
@@ -162,7 +203,7 @@ def add_subscriber_to_event(
     return {"message": "Subscriber added successfully"}
 
 
-@router.delete("/remove_subscriber/")
+@router.delete("/remove_subscriber/", dependencies=[Depends(rate_limit)])
 def remove_subscriber_from_event(
         event_id: str,
         user_id: str,

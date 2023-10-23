@@ -42,6 +42,9 @@ def hash_password(password: str) -> str:
 
 
 class DateTimeEncoder(json.JSONEncoder):
+    """
+    Encoder datetime for json parse.
+    """
     def default(self, obj):
         if isinstance(obj, datetime.datetime):
             return obj.isoformat()

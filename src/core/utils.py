@@ -5,6 +5,7 @@ Date: 22/10/2023
 """
 # ----- Imports ----- #
 import dataclasses
+import datetime
 import json
 import uuid
 import bcrypt
@@ -40,11 +41,8 @@ def hash_password(password: str) -> str:
     return hashed_password.decode('utf-8')
 
 
-# ----- Classes ----- #
-
-
-class DataclassJSONEncoder(json.JSONEncoder):
+class DateTimeEncoder(json.JSONEncoder):
     def default(self, obj):
-        if dataclasses.is_dataclass(obj):
-            return dataclasses.asdict(obj)
-        return super().default(obj)
+        if isinstance(obj, datetime.datetime):
+            return obj.isoformat()
+        return super(DateTimeEncoder, self).default(obj)

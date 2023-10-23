@@ -1,6 +1,6 @@
 import pytest
 from core.event import Event, EventAlreadyExist, ModifyChangesAreInvalid, UserDoesNotASubscriber, UserAlreadySubscriber
-from common.handlers.events_handler import EventsHandler
+from common.events_handler import EventsHandler
 import tempfile
 import os
 from datetime import datetime

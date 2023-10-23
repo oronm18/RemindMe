@@ -9,8 +9,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Union, Optional
 
-from common.handlers.events_handler import EventsHandler
-from common.handlers.users_handler import UsersHandler
+from common.events_handler import EventsHandler
+from common.users_handler import UsersHandler
 from core.user import User
 from core.event import Event
 

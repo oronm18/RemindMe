@@ -1,6 +1,6 @@
 import pytest
 from datetime import datetime
-from common.handlers.server_handler import CombinedHandler
+from common.server_handler import CombinedHandler
 import tempfile
 import os
 

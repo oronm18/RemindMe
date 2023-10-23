@@ -1,6 +1,6 @@
 import pytest
 from core.user import User, UserAlreadyExist, UserDoesNotExist, EventAlreadyInUser, EventDoesNotInUser
-from common.handlers.users_handler import UsersHandler
+from common.users_handler import UsersHandler
 import tempfile
 import os
 

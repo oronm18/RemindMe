@@ -13,7 +13,7 @@ from typing import Optional
 import uvicorn
 from fastapi import FastAPI, APIRouter, Depends, HTTPException, Request
 
-from common.handlers.server_handler import CombinedHandler
+from common.server_handler import CombinedHandler
 from core.user import UserDoesNotExist
 
 # ----- FastAPI server ----- #

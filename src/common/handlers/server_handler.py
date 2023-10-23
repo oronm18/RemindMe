@@ -4,12 +4,13 @@ Author: Oron Moshe
 Date: 22/10/2023
 """
 # ----- Imports ----- #
+
 from datetime import datetime
 from pathlib import Path
 from typing import Union, Optional
 
-from common.events_handler import EventsHandler
-from common.users_handler import UsersHandler
+from common.handlers.events_handler import EventsHandler
+from common.handlers.users_handler import UsersHandler
 from core.user import User
 from core.event import Event
 
@@ -85,6 +86,9 @@ class CombinedHandler:
         :return: Event id.
         """
         end = end if end is not None else start
+
+        start = start.strftime('%Y-%m-%d %H:%M:%S+00:00')
+        end = end.strftime('%Y-%m-%d %H:%M:%S+00:00')
         event = Event(None, user_id, name, description, location, subscribers, start, end, None)
         self.get_user(event.created_user_id)  # Check if user exist
         if event.created_user_id not in event.subscribers:
@@ -101,15 +105,6 @@ class CombinedHandler:
         """
         return self.events_handler.get_event(event_id)
 
-    def get_events(self, specific_name: str = None):
-        """
-        :param specific_name: If entered, return all the events of the specific user.
-                              If no return all the events.
-        Return all the events.
-        """
-        event_ids = self.get_user(self.get_user_id_by_name(specific_name)).hosts_events
-        return self.events_handler.get_events_by_ids(event_ids)
-
     def remove_event(self, event_id: str):
         """
         Remove event from the database.
@@ -125,7 +120,7 @@ class CombinedHandler:
         :param user_id: User ID.
         :param event_id: Event ID.
         """
-        self.users_handler.add_event_tp_user(user_id, event_id)
+        self.users_handler.add_event_to_user(user_id, event_id)
 
     def remove_event_from_user(self, user_id: str, event_id: str):
         """
@@ -147,7 +142,7 @@ class CombinedHandler:
         """
         Modify an existing event in the database by its event ID.
         :param event_id: ID of the event to modify.
-        :param changes: Key-value pairs of the fields you want to update and their new values.
+        :param changes: Key Value pairs of the fields you want to update and their new values.
         """
         self.events_handler.modify_event(event_id, **changes)
 
@@ -161,9 +156,10 @@ class CombinedHandler:
         ) -> list[Event]:
         """
         Fetch all events with a specific attribute.
-        :param sort_by_attribute: The attribute to sort by (e.g., 'event_start_time', 'creation_time', 'subscribers').
-        :param reverse: If True, sort in descending order; otherwise, sort in ascending order.
-        :param filters: Key-value pairs of the attributes and values you want to filter by.
+        :param sort_by_attribute: The attribute to sort by (examples:
+                                                                'event_start_time', 'creation_time', 'subscribers').
+        :param reverse: If True, sort in descending order. otherwise, sort in ascending order.
+        :param filters: Key Value pairs of the attributes and values you want to filter by.
         :param location_filter:
         :return: List of events that match the given attributes.
         """
@@ -189,11 +185,11 @@ class CombinedHandler:
         self.get_user(user_id)
         self.events_handler.remove_subscriber(event_id, user_id)
 
-    def send_reminder(self, event_id):
+    def send_message(self, event_id, message):
         event = self.get_event(event_id)
         for user_id in event.subscribers:
             user = self.get_user(user_id)
-            msg = f"Reminder: Hi {user.user_name}, '{event.event_name}' will start in 30 minutes at {event.location}!"
+            msg = f"Reminder: Hi {user.user_name}, about '{event.event_name}' at {event.location}, {message}"
             self.users_handler.send_mail(user, msg)
 
     def close(self):

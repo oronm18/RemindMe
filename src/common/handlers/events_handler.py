@@ -71,7 +71,7 @@ class EventsHandler(DatabaseHandler):
         """
         Modify an existing event in the database by its event ID.
         :param event_id: ID of the event to modify.
-        :param changes: Key-value pairs of the fields you want to update and their new values.
+        :param changes: Key Value pairs of the fields you want to update and their new values.
         """
         set_conditions = []
         params = []
@@ -120,8 +120,8 @@ class EventsHandler(DatabaseHandler):
         """
         Fetch all events with optional filtering and sorting.
         :param sort_by_attribute: The attribute to sort by (e.g., 'event_start_time', 'creation_time', 'subscribers').
-        :param reverse: If True, sort in descending order; otherwise, sort in ascending order.
-        :param filters: Key-value pairs of the attributes and values you want to filter by.
+        :param reverse: If True, sort in descending order. otherwise, sort in ascending order.
+        :param filters: Key Value pairs of the attributes and values you want to filter by.
         :return: List of events that match the given filters and sorted by the provided attribute.
         """
         # Filtering query.
@@ -142,7 +142,7 @@ class EventsHandler(DatabaseHandler):
             if sort_by_attribute not in Event.__annotations__.keys():
                 raise InvalidAttribute(sort_by_attribute)
 
-            # Special handling for counting the number of subscribers
+            # Counting the number of subscribers.
             if sort_by_attribute == "subscribers":
                 order_by_clause = "LENGTH(subscribers) - LENGTH(REPLACE(subscribers, ',', ''))"
             else:
@@ -151,9 +151,7 @@ class EventsHandler(DatabaseHandler):
             order_direction = "DESC" if reverse else "ASC"
             order_clause = f"ORDER BY {order_by_clause} {order_direction}"
 
-        # Constructing final query
         query = f"SELECT * FROM events {where_clause} {order_clause}"
-
         self.cursor.execute(query, params)
         results = self.cursor.fetchall()
         return self.fetch_events(results)

@@ -1,6 +1,6 @@
 import pytest
 from core.user import User, UserAlreadyExist, UserDoesNotExist, EventAlreadyInUser, EventDoesNotInUser
-from common.users_handler import UsersHandler
+from common.handlers.users_handler import UsersHandler
 import tempfile
 import os
 
@@ -53,17 +53,17 @@ def test_add_event_to_user(users_handler):
     user = User(user_id=None, user_name="Oron", user_mail="Oron@gmail.com", hashed_password="")
     user_id = users_handler.add_user(user, "111")
 
-    users_handler.add_event_tp_user(user_id, "event1")
+    users_handler.add_event_to_user(user_id, "event1")
 
     with pytest.raises(EventAlreadyInUser):
-        users_handler.add_event_tp_user(user_id, "event1")
+        users_handler.add_event_to_user(user_id, "event1")
 
 
 def test_remove_event_from_user(users_handler):
     user = User(user_id=None, user_name="Oron", user_mail="Oron@gmail.com", hashed_password="")
     user_id = users_handler.add_user(user, "111")
 
-    users_handler.add_event_tp_user(user_id, "event1")
+    users_handler.add_event_to_user(user_id, "event1")
     users_handler.remove_event_from_user(user_id, "event1")
 
     with pytest.raises(EventDoesNotInUser):

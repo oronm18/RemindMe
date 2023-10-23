@@ -11,7 +11,7 @@ from typing import Union
 
 from core.database_handler import DatabaseHandler
 from core.user import User, UserAlreadyExist, UserDoesNotExist, EventAlreadyInUser, EventDoesNotInUser
-from core.utils import generate_unique_id, hash_password
+from core.utils import generate_unique_id, hash_password, compare_hashes
 
 
 # ----- Classes ----- #
@@ -73,28 +73,27 @@ class UsersHandler(DatabaseHandler):
         self.cursor.execute("DELETE FROM users WHERE user_id=?", (user_id,))
         self.conn.commit()
 
-    def add_event_tp_user(self, user_id: str, event_id: str):
+    def add_event_to_user(self, user_id: str, event_id: str):
         """
         Add event id to user.
         :param user_id: Given user to add the event.
         :param event_id: Given event id to add.
         """
-        # Fetch the current list of event IDs for the user
         self.cursor.execute("SELECT hosts_events FROM users WHERE user_id=?", (user_id,))
         result = self.cursor.fetchone()
         if not result:
             raise UserDoesNotExist()
 
-        # Deserialize the events list and check if the event ID already exists
+        # Check if the event ID already exists.
         events_list = json.loads(result[0])
         if event_id in events_list:
             raise EventAlreadyInUser()
 
-        # Append the new event ID and serialize the updated list
+        # Append the new event ID.
         events_list.append(event_id)
         serialized_events = json.dumps(events_list)
 
-        # Update the user's events list in the database
+        # Update the user's events list in the database.
         self.cursor.execute("UPDATE users SET hosts_events=? WHERE user_id=?", (serialized_events, user_id))
         self.conn.commit()
 
@@ -104,22 +103,22 @@ class UsersHandler(DatabaseHandler):
         :param user_id: Given user to remove the event.
         :param event_id: Given event id to remove.
         """
-        # Fetch the current list of event IDs for the user
+        # Get the user events list.
         self.cursor.execute("SELECT hosts_events FROM users WHERE user_id=?", (user_id,))
         result = self.cursor.fetchone()
         if not result:
             raise UserDoesNotExist()
 
-        # Deserialize the events list and check if the event ID exists
+        # Check if the event ID exists.
         events_list = json.loads(result[0])
         if event_id not in events_list:
             raise EventDoesNotInUser()
 
-        # Remove the event ID and serialize the updated list
+        # Remove the event ID.
         events_list.remove(event_id)
         serialized_events = json.dumps(events_list)
 
-        # Update the user's events list in the database
+        # Update the user's events list in the database.
         self.cursor.execute("UPDATE users SET hosts_events=? WHERE user_id=?", (serialized_events, user_id))
         self.conn.commit()
 
@@ -134,6 +133,27 @@ class UsersHandler(DatabaseHandler):
         if not result:
             raise UserDoesNotExist(user_name)
         return result[0]
+
+    def login(self, user_name, password):
+        """
+        Check if the user exist and if the hashed password equal to the saved hashed password.
+        :param user_name: username of a user.
+        :param password: password od the user.
+        :return: user id.
+        """
+        self.cursor.execute("SELECT user_id, hashed_password FROM users WHERE user_name=?", (user_name,))
+        result = self.cursor.fetchone()
+
+        # Check if user exist
+        if not result:
+            raise UserDoesNotExist(f"User with name '{user_name}' does not exist.")
+
+        # Check if the hashed password equals hashed password
+        stored_hashed_password = result[1]
+        if not compare_hashes(password, stored_hashed_password):
+            raise ValueError("Incorrect password.")
+
+        return result[0]  # Return the user id
 
     @staticmethod
     def send_mail(user: User, message: str):

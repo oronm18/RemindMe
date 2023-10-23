@@ -1,5 +1,5 @@
 """
-Utils file for the project
+Utils file for the project.
 Author: Oron Moshe
 Date: 22/10/2023
 """

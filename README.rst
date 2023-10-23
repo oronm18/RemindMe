@@ -96,6 +96,10 @@ Event Reminders
 ---------------
 - Reminders are sent 30 minutes before an event's start time. This is managed by the `reminder_background_task` which runs on server startup.
 
+Tests
+---------------
+- Using pytest for my unittests. Can see results at the CI-CD.
+
 Bonus Features
 --------------
 - **Rate Limiting**: Enabled using the `RateLimiter` class, set at 50 requests per minute.

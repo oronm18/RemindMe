@@ -3,6 +3,11 @@ CLI Application for interacting with a remote API.
 Author: Oron Moshe
 Date: 23/10/2023
 """
+
+"""
+THIS FILE IS ONLY FOR TEST THE API ROUTES VIA CONSOLE.
+"""
+
 # ----- Imports ----- #
 
 import requests

@@ -170,9 +170,9 @@ class EventsHandler(DatabaseHandler):
                       event_description=result[3],
                       location=result[4],
                       subscribers=subscribers,
-                      event_start_time=result[6],
-                      event_end_time=result[7],
-                      creation_time=result[8]))
+                      event_start_time=datetime.fromisoformat(result[6]),
+                      event_end_time=datetime.fromisoformat(result[7]),
+                      creation_time=datetime.fromisoformat(result[8])))
 
         return events
 

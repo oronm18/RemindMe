@@ -1,11 +1,10 @@
-from datetime import datetime
+import threading
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import FastAPI, APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from fastapi import FastAPI, APIRouter, Depends
 
 from common.server_handler import CombinedHandler
-from core.event import Event
 
 app = FastAPI()
 router = APIRouter()
@@ -35,8 +34,8 @@ def remove_user(user_id: str, handler: CombinedHandler = Depends(get_handler)):
     return {"message": "User removed successfully"}
 
 
-@router.post("/add_event/")
-def add_event(
+@router.post("/schedule_event/")
+def schedule_event(
         user_id: str,
         name: str,
         description: str,
@@ -65,7 +64,21 @@ def remove_event(event_id: str, handler: CombinedHandler = Depends(get_handler))
 
 
 @router.put("/modify_event/{event_id}/")
-def modify_event(event_id: str, changes: dict, handler: CombinedHandler = Depends(get_handler)):
+def modify_event(
+        event_id: str,
+        name: str = None,
+        description: str = None,
+        location: str = None,
+        start: datetime = None,
+        end: datetime = None,
+        handler: CombinedHandler = Depends(get_handler)
+):
+    changes = {}
+    if name: changes["event_name"] = name
+    if description: changes["event_description"] = description
+    if location: changes["location"] = location
+    if start: changes["event_start_time"] = start
+    if end: changes["event_end_time"] = end
     handler.modify_event(event_id, **changes)
     return {"message": "Event modified successfully"}
 
@@ -98,6 +111,40 @@ def remove_subscriber_from_event(
 ):
     handler.remove_subscriber_from_event(event_id, user_id)
     return {"message": "Subscriber removed successfully"}
+
+
+def check_for_upcoming_events(handler: CombinedHandler):
+    """
+    Check for events starting in the next 30 minutes and send reminders.
+    """
+    now = datetime.now(timezone.utc)
+    twenty_nine_minutes_from_now = now + timedelta(minutes=29, hours=3)
+    thirty_minutes_from_now = now + timedelta(minutes=30, hours=3)
+
+    # Fetch all events starting between 29 and 30 minutes from now.
+    upcoming_events = handler.events_handler.get_events(sort_by_attribute='event_start_time',
+                                                        location_filter=None)
+    for event in upcoming_events:
+        if twenty_nine_minutes_from_now <= event.event_start_time <= thirty_minutes_from_now:
+            handler.send_reminder(event.event_id)
+
+
+def reminder_background_task(handler: CombinedHandler):
+    """
+    Background task to run every minute and check for events starting in the next 30 minutes.
+    """
+    import time
+    while True:
+        check_for_upcoming_events(handler)
+        time.sleep(60)  # Check every minute
+
+
+@app.on_event("startup")
+async def on_startup():
+    handler = get_handler()
+    thread = threading.Thread(target=reminder_background_task, args=(handler,))
+    thread.daemon = True
+    thread.start()
 
 
 @app.on_event("shutdown")

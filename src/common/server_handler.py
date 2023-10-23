@@ -189,6 +189,13 @@ class CombinedHandler:
         self.get_user(user_id)
         self.events_handler.remove_subscriber(event_id, user_id)
 
+    def send_reminder(self, event_id):
+        event = self.get_event(event_id)
+        for user_id in event.subscribers:
+            user = self.get_user(user_id)
+            msg = f"Reminder: Hi {user.user_name}, '{event.event_name}' will start in 30 minutes at {event.location}!"
+            self.users_handler.send_mail(user, msg)
+
     def close(self):
         """
         Close the database connections.

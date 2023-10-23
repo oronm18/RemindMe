@@ -69,6 +69,7 @@ class UsersHandler(DatabaseHandler):
         Remove user from data base.
         :param user_id: Given user id to remove
         """
+        self.get_user(user_id)
         self.cursor.execute("DELETE FROM users WHERE user_id=?", (user_id,))
         self.conn.commit()
 
@@ -133,3 +134,7 @@ class UsersHandler(DatabaseHandler):
         if not result:
             raise UserDoesNotExist(user_name)
         return result[0]
+
+    @staticmethod
+    def send_mail(user: User, message: str):
+        print(f"Sending mail with {message} to {user.user_mail}")

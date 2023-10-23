@@ -23,7 +23,7 @@ class DatabaseHandler:
         :param database_file: The database.
         """
         self._users_database_path: Path = Path(database_file)
-        self.conn = sqlite3.connect(database_file)
+        self.conn = sqlite3.connect(database_file, check_same_thread=False)
         self.cursor = self.conn.cursor()
 
     def close(self):
